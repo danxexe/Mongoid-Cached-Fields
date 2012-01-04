@@ -10,4 +10,8 @@ group :development do
   gem "bundler", "~> 1.0.0"
   gem "jeweler", "~> 1.6.4"
   gem "rcov", ">= 0"
+  gem "factory_girl", ">= 0"
 end
+
+gem "mongoid", "~> 2.3"
+gem "activesupport", "~> 3.1"
