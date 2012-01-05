@@ -21,8 +21,8 @@ Mongoid.configure do |config|
   config.master = Mongo::Connection.new.db("mongoid_cached_fields_test")
 end
 
-require File.join(File.dirname(__FILE__), 'factories')
 require File.join(File.dirname(__FILE__), 'models', 'player')
+require File.join(File.dirname(__FILE__), 'factories')
 
 class Test::Unit::TestCase
 end
