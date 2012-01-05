@@ -13,7 +13,8 @@ group :development do
   gem "factory_girl", ">= 0"
   gem 'bson_ext', '~> 1.5.0'
   gem 'rdoc', ">= 0"
+  gem 'pry', ">= 0"
 end
 
-gem "mongoid", "~> 2.3"
+gem "mongoid", "~> 2.4"
 gem "activesupport", "~> 3.1"
