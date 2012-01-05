@@ -7,6 +7,8 @@ module Mongoid
 			class_attribute :cached_fields
 			self.cached_fields = []
 
+			before_save :update_cached_fields
+
 			class_attribute :nested_cached_fields
 			self.nested_cached_fields = []
 		end
@@ -25,8 +27,6 @@ module Mongoid
 				define_method cache_method do
 					self.send("#{name}=", self.instance_eval(&callback))
 				end
-
-				before_save cache_method
 			end
 
 			def cached_fields_for(name)

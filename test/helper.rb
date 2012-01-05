@@ -13,6 +13,8 @@ require 'factory_girl'
 
 require 'bson'
 
+require 'pry' # debugging
+
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'mongoid-cached-fields'
@@ -22,6 +24,8 @@ Mongoid.configure do |config|
 end
 
 require File.join(File.dirname(__FILE__), 'models', 'player')
+require File.join(File.dirname(__FILE__), 'models', 'referee')
+require File.join(File.dirname(__FILE__), 'models', 'match')
 require File.join(File.dirname(__FILE__), 'factories')
 
 class Test::Unit::TestCase
