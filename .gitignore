@@ -4,3 +4,7 @@
 ._*
 .AppleDouble
 .AppleDouble/*
+
+# Bundler
+
+Gemfile.lock
