@@ -11,6 +11,8 @@ require 'test/unit'
 require 'shoulda'
 require 'factory_girl'
 
+require 'bson'
+
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'mongoid-cached-fields'
