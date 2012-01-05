@@ -12,6 +12,7 @@ group :development do
   gem "rcov", ">= 0"
   gem "factory_girl", ">= 0"
   gem 'bson_ext', '~> 1.5.0'
+  gem 'rdoc', ">= 0"
 end
 
 gem "mongoid", "~> 2.3"
