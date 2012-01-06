@@ -14,6 +14,7 @@ group :development do
   gem 'bson_ext', '~> 1.5.0'
   gem 'rdoc', ">= 0"
   gem 'pry', ">= 0"
+  gem 'database_cleaner', ">= 0"
 end
 
 gem "mongoid", "~> 2.4"

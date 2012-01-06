@@ -23,6 +23,9 @@ Mongoid.configure do |config|
   config.master = Mongo::Connection.new.db("mongoid_cached_fields_test")
 end
 
+require 'database_cleaner'
+DatabaseCleaner.clean
+
 require File.join(File.dirname(__FILE__), 'models', 'player')
 require File.join(File.dirname(__FILE__), 'models', 'referee')
 require File.join(File.dirname(__FILE__), 'models', 'match')

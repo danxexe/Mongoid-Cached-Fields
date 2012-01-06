@@ -11,19 +11,19 @@ class Match
   # Manual cache
 
   class CachedReferee < Mongoid::CachedDocument
-
     self.cached_fields = ['name']
-    self.cache_from = :referee
-
+    self.cache_from = :cache_source_referee
   end
 
   embeds_one :cached_referee, :class_name => 'Match::CachedReferee'
+  alias_method :cache_source_referee, :referee
+  alias_method :referee, :cached_referee
 
   before_save :update_cached_referee
 
   def update_cached_referee
 
-    if referee.present?
+    if cache_source_referee.present?
       build_cached_referee unless cached_referee.present?
       cached_referee.update_cache
     else

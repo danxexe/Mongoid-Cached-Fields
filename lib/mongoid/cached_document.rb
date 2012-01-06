@@ -1,4 +1,6 @@
 module Mongoid
+
+  # TODO: this class should act more like a proxy
   class CachedDocument
     include Mongoid::Document
 
@@ -9,20 +11,21 @@ module Mongoid
 
     after_build :add_cached_fields
 
-    def _cache_source
+    def _source
       _parent.try(cache_from)
     end
 
 
     def method_missing(m, *args, &block)
-      _cache_source.send(m, *args, &block)
+      _source.send(m, *args, &block)
     end
     def respond_to?(m, include_private = false)
-      super(m, include_private) || _cache_source && _cache_source.respond_to?(m, include_private)
+      super(m, include_private) || _source && _source.respond_to?(m, include_private)
     end
 
     def update_cache
-      self.attributes = _cache_source.attributes.reject { |k,v| cached_fields.exclude? k }
+      self.attributes = _source.attributes.reject { |k,v| cached_fields.exclude? k }
+      self._id = _source._id
     end
 
     def reload
@@ -34,7 +37,7 @@ module Mongoid
 
     def add_cached_fields
       cached_fields.each do |name|
-        self.class.field name, _cache_source.fields[name].options
+        self.class.field name, _source.fields[name].options
       end
     end
 
