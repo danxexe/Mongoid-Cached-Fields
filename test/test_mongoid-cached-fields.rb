@@ -13,7 +13,9 @@ class TestMongoidCachedFields < Test::Unit::TestCase
     match = Factory(:match)
     match.reload
 
-    assert_equal "Lakitu", match.cached_referee.name
+    assert_equal "Lakitu", match.referee.name
+
+    # match.pry
   end
 
 end

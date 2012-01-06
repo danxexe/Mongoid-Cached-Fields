@@ -12,18 +12,23 @@ class Match
 
   class CachedReferee < Mongoid::CachedDocument
     self.cached_fields = ['name']
-    self.cache_from = :cache_source_referee
+    self.cache_from = :referee
   end
 
   embeds_one :cached_referee, :class_name => 'Match::CachedReferee'
-  alias_method :cache_source_referee, :referee
-  alias_method :referee, :cached_referee
+  # alias_method :referee, :cached_referee
+
+  # TODO: test proxy delegation
+  alias_method :source_referee, :referee
+  def referee
+    @cached_document_proxy ||= Mongoid::CachedDocumentProxy.new(_parent, source_referee, cached_referee)
+  end
 
   before_save :update_cached_referee
 
   def update_cached_referee
 
-    if cache_source_referee.present?
+    if referee.present?
       build_cached_referee unless cached_referee.present?
       cached_referee.update_cache
     else

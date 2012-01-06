@@ -12,19 +12,13 @@ module Mongoid
     after_build :add_cached_fields
 
     def _source
-      _parent.try(cache_from)
+      _parent.try(_class.cache_from)
     end
+    alias_method :_class, :class
 
-
-    def method_missing(m, *args, &block)
-      _source.send(m, *args, &block)
-    end
-    def respond_to?(m, include_private = false)
-      super(m, include_private) || _source && _source.respond_to?(m, include_private)
-    end
 
     def update_cache
-      self.attributes = _source.attributes.reject { |k,v| cached_fields.exclude? k }
+      self.attributes = _source.attributes.reject { |k,v| _class.cached_fields.exclude? k }
       self._id = _source._id
     end
 
@@ -36,8 +30,8 @@ module Mongoid
     private
 
     def add_cached_fields
-      cached_fields.each do |name|
-        self.class.field name, _source.fields[name].options
+      _class.cached_fields.each do |name|
+        self._class.field name, _source.fields[name].options
       end
     end
 
