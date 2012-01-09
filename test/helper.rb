@@ -19,17 +19,21 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'mongoid-cached-fields'
 
+# $log = StringIO.new
+# $logger = Logger.new($log, :debug)
+$logger = Logger.new(STDOUT, :debug)
+
 Mongoid.configure do |config|
-  config.master = Mongo::Connection.new.db("mongoid_cached_fields_test")
+  config.master = Mongo::Connection.new(nil, nil, :logger => $logger).db("mongoid_cached_fields_test")
 end
 
 require 'database_cleaner'
 DatabaseCleaner.clean
 
-require File.join(File.dirname(__FILE__), 'models', 'player')
-require File.join(File.dirname(__FILE__), 'models', 'referee')
-require File.join(File.dirname(__FILE__), 'models', 'match')
-require File.join(File.dirname(__FILE__), 'factories')
+require 'models/player'
+require 'models/referee'
+require 'models/match'
+require 'factories'
 
 class Test::Unit::TestCase
 end

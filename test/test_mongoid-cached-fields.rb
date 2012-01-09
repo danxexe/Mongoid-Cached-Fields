@@ -11,6 +11,7 @@ class TestMongoidCachedFields < Test::Unit::TestCase
 
   should "cache association values" do
     match = Factory(:match)
+
     match.reload
 
     assert_equal "Lakitu", match.referee.name

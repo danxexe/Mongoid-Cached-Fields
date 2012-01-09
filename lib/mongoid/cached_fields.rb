@@ -1,85 +1,92 @@
 module Mongoid
-	module CachedFields
+  module CachedFields
 
-		extend ::ActiveSupport::Concern
+    extend ::ActiveSupport::Concern
 
-		included do
-			class_attribute :cached_fields
-			self.cached_fields = []
+    included do
+      class_attribute :cached_fields
+      self.cached_fields = []
 
-			before_save :update_cached_fields
+      before_save :update_cached_fields
 
-			class_attribute :nested_cached_fields
-			self.nested_cached_fields = []
-		end
+      class_attribute :nested_cached_fields
+      self.nested_cached_fields = []
 
-		module ClassMethods
+      class_attribute :cached_relations
+      self.cached_relations = []
+    end
 
-			def cached_field(name, options = {})
-				field name, options
+    module ClassMethods
 
-				self.cached_fields << name
+      def cached_field(name, options = {})
+        field name, options
 
-				cache_method = "cache_#{name}".to_sym
-				callback = options[:value]
+        self.cached_fields << name
 
-				# intance method wich updates the cached field
-				define_method cache_method do
-					self.send("#{name}=", self.instance_eval(&callback))
-				end
-			end
+        cache_method = "cache_#{name}".to_sym
+        callback = options[:value]
 
-			def cached_fields_for(name)
-				self.nested_cached_fields << name
+        # intance method wich updates the cached field
+        define_method cache_method do
+          self.send("#{name}=", self.instance_eval(&callback))
+        end
+      end
 
-				cache_method = "cache_nested_#{name}".to_sym
+      def cached_fields_for(name)
+        self.nested_cached_fields << name
 
-				assoc = self.reflect_on_association(name)
+        cache_method = "cache_nested_#{name}".to_sym
 
-				define_method cache_method do
+        assoc = self.reflect_on_association(name)
 
-					# TODO: fix this
-					# Update cached values of old document if foreign_key changed (Only on external has_one documents)
-					# if !new_record? and !assoc.many? and !assoc.embedded? and self.send("#{assoc.foreign_key}_changed?") and prev_val = self.send("#{assoc.foreign_key}_was")
-					# 	assoc.klass.find(prev_val).try do |r|
-					# 		r.update_cached_fields
-					# 		r.save
-					# 	end
-					# end
+        define_method cache_method do
 
-					[*self.send(name)].each do |r|
-						r.try do |r|
-							r.update_cached_fields
-							r.save unless assoc.embedded?
-						end
-					end
-				end
+          # TODO: fix this
+          # Update cached values of old document if foreign_key changed (Only on external has_one documents)
+          # if !new_record? and !assoc.many? and !assoc.embedded? and self.send("#{assoc.foreign_key}_changed?") and prev_val = self.send("#{assoc.foreign_key}_was")
+          #   assoc.klass.find(prev_val).try do |r|
+          #     r.update_cached_fields
+          #     r.save
+          #   end
+          # end
 
-				if assoc.embedded?
-					before_save cache_method
-				else
-					after_save cache_method
-				end
-			end
+          [*self.send(name)].each do |r|
+            r.try do |r|
+              r.update_cached_fields
+              r.save unless assoc.embedded?
+            end
+          end
+        end
 
-			def update_cached_fields!
-				all.each do |r|
-					r.save
-				end
+        if assoc.embedded?
+          before_save cache_method
+        else
+          after_save cache_method
+        end
+      end
 
-				true
-			end
+      def update_cached_fields!
+        all.each do |r|
+          r.save
+        end
 
-		end
+        true
+      end
 
-		module InstanceMethods
-			def update_cached_fields
-				self.cached_fields.each do |name|
-					cache_method = "cache_#{name}".to_sym
-					self.send cache_method
-				end
-			end
-		end
+      def cached_relation(name, options = {})
+        self.cached_relations << CachedRelation.new(self, name, options)
+      end
 
-	end
+    end
+
+    module InstanceMethods
+      def update_cached_fields
+        self.cached_fields.each do |name|
+          cache_method = "cache_#{name}".to_sym
+          self.send cache_method
+        end
+      end
+    end
+
+  end
 end
