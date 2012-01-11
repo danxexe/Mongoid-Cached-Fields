@@ -23,9 +23,35 @@ require 'mongoid-cached-fields'
 # $logger = Logger.new($log, :debug)
 $logger = Logger.new(STDOUT, :debug)
 
+
+# Test database
 Mongoid.configure do |config|
   config.master = Mongo::Connection.new(nil, nil, :logger => $logger).db("mongoid_cached_fields_test")
 end
+
+
+# Query counter
+
+$log_count = {} # Beware, evil global
+
+def log_count
+  $log_count
+end
+
+module Mongo
+  module Logging
+
+    alias_method :log_operation_without_count, :log_operation
+    def log_operation(name, payload)
+      log_operation_without_count(name, payload)
+
+      $log_count[name] ||= 0
+      $log_count[name] += 1
+    end
+
+  end
+end
+
 
 require 'database_cleaner'
 DatabaseCleaner.clean

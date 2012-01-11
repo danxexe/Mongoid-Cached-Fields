@@ -14,16 +14,16 @@ class Match
 
   # Manual cache
 
-  before_save :update_cached_referee
+  # before_save :update_cached_referee
 
-  def update_cached_referee
+  # def update_cached_referee
 
-    if referee
-      build_cached_referee unless cached_referee
-      referee.update_cache
-    else
-      self.cached_referee = nil
-    end
-  end
+  #   if referee
+  #     build_cached_referee unless cached_referee
+  #     referee.update_cache
+  #   else
+  #     self.cached_referee = nil
+  #   end
+  # end
 
 end
