@@ -10,6 +10,7 @@ module Mongoid
         cached_document_class!
         cached_relation_macro!
         cached_document_proxy!
+        update_cache_callback!
       end
 
       def source_relation_meta
@@ -75,6 +76,29 @@ module Mongoid
 
           end
 
+        end
+      end
+
+      def update_cache_callback!
+        proxy_relation_name = @name
+        callback_name = "update_cached_#{@name}"
+        source_relation_name = "source_#{@name}"
+        cache_relation_name = "cached_#{@name}"
+        set_cache_relation_name = "#{cache_relation_name}="
+        build_cached_relation_name = "build_#{cache_relation_name}"
+
+        @klass.module_eval do
+          
+          define_method callback_name do
+            if send(source_relation_name)
+              send(build_cached_relation_name) unless send(cache_relation_name)
+              send(proxy_relation_name).update_cache
+            else
+              send(set_cache_relation_name, nil)
+            end
+          end
+
+          before_save callback_name
         end
       end
 
