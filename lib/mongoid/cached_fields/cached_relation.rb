@@ -25,16 +25,19 @@ module Mongoid
       private
 
       def cached_document_class!
+        parent_class = @klass
         source_class = source_relation_meta.klass
         source_class_name = source_class.name
         cache_class_name = "Cached#{source_class_name}"
         cache_class_cached_fields = @cached_fields
           
-        @klass.module_eval do
+        parent_class.module_eval do
 
           cache_class = Class.new(Mongoid::CachedFields::CachedDocument)
 
           cache_class.module_eval do
+            embedded_in parent_class.name.underscore
+
             self.cached_fields = cache_class_cached_fields
 
             self.cached_fields.each do |name|
