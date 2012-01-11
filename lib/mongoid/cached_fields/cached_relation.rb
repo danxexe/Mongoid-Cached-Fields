@@ -122,7 +122,7 @@ module Mongoid
               send(build_cached_relation_name) unless send(binding.relation_name(:cache))
               send(binding.relation_name(:proxy)).update_cache
             else
-              send(relation_name(:set_cache), nil)
+              send(binding.relation_name(:set_cache), nil)
             end
           end
 

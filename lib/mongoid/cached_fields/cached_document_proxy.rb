@@ -44,7 +44,7 @@ module Mongoid
 
       def build_cache
         build_cached_relaction_method = "build_cached_#{@relation_name}"
-        @cache = parent.send(build_cached_relaction_method) unless @cache
+        @cache = parent.send(build_cached_relaction_method) unless cache
       end
 
       def update_cache
