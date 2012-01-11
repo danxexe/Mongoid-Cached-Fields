@@ -2,6 +2,8 @@ module Mongoid
   module CachedFields
     class CachedRelation
 
+      attr_reader :cached_fields
+
       def initialize(klass, name, options = {})
         @klass, @name, @options = klass, name, options
 
@@ -13,91 +15,114 @@ module Mongoid
         update_cache_callback!
       end
 
-      def source_relation_meta
-        @klass.relations[@name.to_s]
+
+      def relation_class(target)
+        case target
+          when :parent then @klass
+          when :cache then @cached_document_class ||= cached_document_class!
+          else relation_meta(target).klass
+        end
       end
 
-      def cached_document_class
-        @cached_document_class ||= cached_document_class!
+      def relation_class_name(target)
+        case target
+          when :cache then "Cached#{relation_class_name(:original)}"
+          else relation_class(target).name
+        end
+      end
+
+      def relation_name(target)
+        case target
+          when :original then @name
+          when :source then "source_#{relation_name(:original)}"
+          when :cache then "cached_#{relation_name(:original)}"
+          when :set_cache then "#{relation_name(:cache)}="
+          when :proxy then relation_name(:original)
+        end
+      end
+
+      def relation_meta_name(target)
+        case target
+          when :source then relation_name(:original)
+          else relation_name(target)
+        end
+      end
+
+      def relation_meta(target)
+        relation_class(:parent).relations[relation_meta_name(target).to_s]
+      end
+
+      def relation_macro(target)
+        case target
+          when :cache then relation_meta(:source).many? ? :embeds_many : :embeds_one
+          else relation_meta(target).macro
+        end
+      end
+
+      def proxy(parent)
+        Mongoid::CachedFields::CachedDocumentProxy.new(parent, relation_name(:original))
       end
 
 
       private
 
       def cached_document_class!
-        parent_class = @klass
-        source_class = source_relation_meta.klass
-        source_class_name = source_class.name
-        cache_class_name = "Cached#{source_class_name}"
-        cache_class_cached_fields = @cached_fields
+        binding = self
           
-        parent_class.module_eval do
+        binding.relation_class(:parent).module_eval do
 
-          cache_class = Class.new(Mongoid::CachedFields::CachedDocument)
+          cache_class = Class.new(Mongoid::CachedFields::CachedDocument).module_eval do
+            embedded_in binding.relation_class_name(:parent).underscore
 
-          cache_class.module_eval do
-            embedded_in parent_class.name.underscore
-
-            self.cached_fields = cache_class_cached_fields
-
-            self.cached_fields.each do |name|
-              field name, source_class.fields[name.to_s].options
+            self.cached_fields = binding.cached_fields.each do |name|
+              field name, binding.relation_class(:source).fields[name.to_s].options
             end
 
+            self
           end
 
-          const_set cache_class_name, cache_class
+          const_set binding.relation_class_name(:cache), cache_class
 
         end
-
-        @cached_document_class = @klass.const_get(cache_class_name)
       end
 
       def cached_relation_macro!
-        cache_relation_name = "cached_#{@name}"
-        cache_relation_macro = source_relation_meta.many? ? :embeds_many : :embeds_one
-        cache_document_class = cached_document_class.name
+        binding = self
 
-        @klass.module_eval do
-          send cache_relation_macro, cache_relation_name, :class_name => cache_document_class
+        relation_class(:parent).module_eval do
+          send binding.relation_macro(:cache), binding.relation_name(:cache), :class_name => binding.relation_class(:cache).name
         end
       end
 
-
       def cached_document_proxy!
-        proxy_relation_name = @name
-        source_relation_name = "source_#{@name}"
-        cache_relation_name = "cached_#{@name}"
-        proxy_ivar = "@#{@name}_proxy"
+        binding = self
 
-        @klass.module_eval do
+        relation_class(:parent).module_eval do
 
-          alias_method source_relation_name, proxy_relation_name
-          define_method proxy_relation_name do
+          proxy_ivar = "@#{binding.relation_name(:original)}_proxy"
 
-            instance_variable_get(proxy_ivar) || instance_variable_set(proxy_ivar, Mongoid::CachedFields::CachedDocumentProxy.new(self, proxy_relation_name))
-
+          alias_method binding.relation_name(:source), binding.relation_name(:original)
+          define_method binding.relation_name(:proxy) do
+            instance_variable_get(proxy_ivar) || instance_variable_set(proxy_ivar, binding.proxy(self))
           end
 
         end
       end
 
       def update_cache_callback!
-        proxy_relation_name = @name
-        callback_name = "update_cached_#{@name}"
-        source_relation_name = "source_#{@name}"
-        cache_relation_name = "cached_#{@name}"
-        set_cache_relation_name = "#{cache_relation_name}="
-        build_cached_relation_name = "build_#{cache_relation_name}"
+        binding = self
+
+        callback_name = "update_#{relation_name(:cache)}"
+        build_cached_relation_name = "build_#{relation_name(:cache)}"
 
         @klass.module_eval do
           
           define_method callback_name do
-            if send(source_relation_name)
-              send(build_cached_relation_name) unless send(cache_relation_name)
-              send(proxy_relation_name).update_cache
+            if send(binding.relation_name(:source))
+              send(build_cached_relation_name) unless send(binding.relation_name(:cache))
+              send(binding.relation_name(:proxy)).update_cache
             else
-              send(set_cache_relation_name, nil)
+              send(relation_name(:set_cache), nil)
             end
           end
 

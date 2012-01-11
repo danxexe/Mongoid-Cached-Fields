@@ -10,8 +10,12 @@ class TestMongoidCachedFields < Test::Unit::TestCase
   end
 
   should "cache has_one association values" do
+    # Match.new.pry
+
     match = Factory(:match)
     match = match.class.find(match.id)
+
+    # match.pry
 
     assert_equal "Lakitu", match.referee.name
   end
