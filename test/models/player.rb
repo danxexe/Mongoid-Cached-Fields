@@ -5,6 +5,8 @@ class Player
   field :name
   field :title
 
-  cached_field :full_name, :value => proc { [title, name].join(' ') }
+  cached_field :full_name, :value => proc { [title, name].compact.join(' ') }
+
+  belongs_to :team
 
 end

@@ -59,6 +59,7 @@ DatabaseCleaner.clean
 require 'models/player'
 require 'models/referee'
 require 'models/match'
+require 'models/team'
 require 'factories'
 
 class Test::Unit::TestCase

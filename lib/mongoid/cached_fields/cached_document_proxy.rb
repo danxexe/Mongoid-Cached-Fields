@@ -3,17 +3,16 @@ module Mongoid
 
     class CachedDocumentProxy < ActiveSupport::BasicObject
 
-      def initialize(parent, relation_name)
+      attr_reader :cached_relation, :parent
+
+      def initialize(cached_relation, parent, relation_name)
+        @cached_relation = cached_relation
         @parent = parent
         @relation_name = relation_name.to_s
       end
 
       def class
         parent.relations[@relation_name].klass
-      end
-
-      def parent
-        @parent
       end
 
       def source
@@ -26,8 +25,14 @@ module Mongoid
         @cache
       end
 
+      def cache=(val)
+        parent.send(cached_relation.relation_name(:set_cache), val)
+      end
+
       def target(m)
-        if cache && cache.cached_fields.include?(m.to_s)
+        if cached_relation.relation_meta(:original).many? && m.to_s == '[]'
+          cache
+        elsif cache && cache.cached_fields.include?(m.to_s)
           cache
         else
           source
@@ -48,10 +53,19 @@ module Mongoid
       end
 
       def update_cache
-        build_cache
+        cache_class = cached_relation.relation_class(:cache)
 
-        cache.attributes = source.attributes.reject { |k,v| cache.cached_fields.exclude? k.to_s }
-        cache._id = source._id
+        if cached_relation.relation_meta(:original).many?
+          self.cache = source.map do |source_doc|
+            cache_doc = cache_class.new
+            cache_doc.attributes = source_doc.attributes.reject { |k,v| cache_class.cached_fields.exclude? k.to_s }
+
+            cache_doc
+          end
+        else
+          build_cache
+          cache.attributes = source.attributes.reject { |k,v| cache_class.cached_fields.exclude? k.to_s }
+        end
       end
 
     end

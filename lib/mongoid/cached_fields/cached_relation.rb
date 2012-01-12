@@ -60,7 +60,7 @@ module Mongoid
       end
 
       def proxy(parent)
-        Mongoid::CachedFields::CachedDocumentProxy.new(parent, relation_name(:original))
+        Mongoid::CachedFields::CachedDocumentProxy.new(self, parent, relation_name(:original))
       end
 
 
@@ -72,10 +72,25 @@ module Mongoid
         binding.relation_class(:parent).module_eval do
 
           cache_class = Class.new(Mongoid::CachedFields::CachedDocument).module_eval do
-            embedded_in binding.relation_class_name(:parent).underscore
+            embedded_in binding.relation_class_name(:parent).underscore, :inverse_of => binding.relation_name(:source)
 
             self.cached_fields = binding.cached_fields.each do |name|
               field name, binding.relation_class(:source).fields[name.to_s].options
+            end
+
+            def _target(m)
+              if _index
+                 source_collection = relations.first[1][:inverse_of]
+                 _parent.send(source_collection)[_index]
+              end
+            end
+
+            def method_missing(m, *args, &block)
+              return super unless _index
+              _target(m).send(m, *args, &block)
+            end
+            def respond_to?(m, include_private = false)
+              _target(m).respond_to?(m, include_private)
             end
 
             self
@@ -119,7 +134,6 @@ module Mongoid
           
           define_method callback_name do
             if send(binding.relation_name(:source))
-              send(build_cached_relation_name) unless send(binding.relation_name(:cache))
               send(binding.relation_name(:proxy)).update_cache
             else
               send(binding.relation_name(:set_cache), nil)

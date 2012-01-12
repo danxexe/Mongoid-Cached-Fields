@@ -3,7 +3,7 @@ require 'helper'
 class TestMongoidCachedFields < Test::Unit::TestCase
 
   should "cache simple values" do
-    user = Factory(:player1)
+    user = Factory(:player_mario)
     user.reload
 
     assert_equal "Dr. Mario", user.full_name
@@ -16,7 +16,7 @@ class TestMongoidCachedFields < Test::Unit::TestCase
     assert_equal "Lakitu", match.referee.name
   end
 
-  should "not hit the database when reading cached values" do
+  should "not hit the database when reading has_one cached values" do
     match = Factory(:match)
     match = match.class.find(match.id)
 
@@ -41,6 +41,25 @@ class TestMongoidCachedFields < Test::Unit::TestCase
     match.referee.name = "Toad"
 
     assert_equal "Toad", match.referee.name
+  end
+
+  should "cache has_many association values" do
+    team = Factory(:team_mario)
+    team = team.class.find(team.id)
+
+    assert_equal "Mario", team.players[0].name
+    assert_equal "Luigi", team.players[1].name
+  end
+
+  should "not hit the database when reading has_many cached values" do
+    team = Factory(:team_mario)
+    team = team.class.find(team.id)
+
+    log_count[:find] = 0
+
+    team.players[0].name
+
+    assert_equal 0, log_count[:find]
   end
 
 end
