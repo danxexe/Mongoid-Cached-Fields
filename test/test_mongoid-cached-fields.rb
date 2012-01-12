@@ -62,4 +62,12 @@ class TestMongoidCachedFields < Test::Unit::TestCase
     assert_equal 0, log_count[:find]
   end
 
+  should "forward non-cached values to the source document on has_many relations" do
+    team = Factory(:team_mario)
+    team = team.class.find(team.id)
+
+    assert_equal "Dr.", team.players[0].title
+    assert_nil team.players[1].title
+  end
+
 end
