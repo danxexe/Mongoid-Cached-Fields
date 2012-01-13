@@ -70,4 +70,22 @@ class TestMongoidCachedFields < Test::Unit::TestCase
     assert_nil team.players[1].title
   end
 
+  should "cache belongs_to association values" do
+    team = Factory(:team_mario)
+    player = Player.find(team.players[0].id)
+
+    assert_equal "Mario Bros.", player.team.name
+  end
+
+  should "not hit the database when reading belongs_to cached values" do
+    team = Factory(:team_mario)
+    player = Player.find(team.players[0].id)
+
+    log_count[:find] = 0
+
+    player.team.name
+
+    assert_equal 0, log_count[:find]
+  end
+
 end

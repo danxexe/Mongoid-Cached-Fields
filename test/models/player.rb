@@ -9,4 +9,6 @@ class Player
 
   belongs_to :team
 
+  cached_relation :team, :cache => :name
+
 end

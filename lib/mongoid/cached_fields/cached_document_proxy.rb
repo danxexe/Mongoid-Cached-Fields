@@ -59,12 +59,14 @@ module Mongoid
           self.cache = source.map do |source_doc|
             cache_doc = cache_class.new
             cache_doc.attributes = source_doc.attributes.reject { |k,v| cache_class.cached_fields.exclude? k.to_s }
+            cache_doc.id = source_doc.id
 
             cache_doc
           end
         else
           build_cache
           cache.attributes = source.attributes.reject { |k,v| cache_class.cached_fields.exclude? k.to_s }
+          cache.id = source.id
         end
       end
 

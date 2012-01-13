@@ -19,16 +19,21 @@ module Mongoid
       def relation_class(target)
         case target
           when :parent then @klass
-          when :cache then @cached_document_class ||= cached_document_class!
+          when :cache then @cached_document_class ||= create_cached_document_class!
           else relation_meta(target).klass
         end
       end
 
-      def relation_class_name(target)
-        case target
-          when :cache then "Cached#{relation_class_name(:original)}"
-          else relation_class(target).name
+      def relation_class_name(target, include_namespaces = true)
+        name = case target
+          when :parent then relation_class(:parent).name
+          when :cache then "#{relation_class_name(:parent)}::Cached#{relation_class_name(:original)}"
+          else relation_meta(target).class_name
         end
+
+        name = name.split('::').last unless include_namespaces
+
+        name
       end
 
       def relation_name(target)
@@ -70,7 +75,23 @@ module Mongoid
         binding = self
           
         binding.relation_class(:parent).module_eval do
+          (class << self; self; end).instance_eval do
+            define_method :const_missing do |const_name|
+              if const_name.to_s == binding.relation_class_name(:cache, false).to_s
+                binding.relation_class(:cache)
+              else
+                super const_name
+              end
+            end
+          end
+        end
 
+      end
+
+      def create_cached_document_class!
+        binding = self
+
+        relation_class(:parent).module_eval do
           cache_class = Class.new(Mongoid::CachedFields::CachedDocument).module_eval do
             embedded_in binding.relation_class_name(:parent).underscore, :inverse_of => binding.relation_name(:source)
 
@@ -96,8 +117,7 @@ module Mongoid
             self
           end
 
-          const_set binding.relation_class_name(:cache), cache_class
-
+          const_set binding.relation_class_name(:cache, false), cache_class
         end
       end
 
@@ -105,7 +125,7 @@ module Mongoid
         binding = self
 
         relation_class(:parent).module_eval do
-          send binding.relation_macro(:cache), binding.relation_name(:cache), :class_name => binding.relation_class(:cache).name
+          send binding.relation_macro(:cache), binding.relation_name(:cache), :class_name => binding.relation_class_name(:cache)
         end
       end
 
